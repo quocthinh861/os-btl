@@ -227,7 +227,7 @@ int main(int argc, char * argv[]) {
 
 
 	/* Create MEM RAM */
-	int framenum = memramsz / PAGING_FRAME_SZ;
+	int framenum = memramsz / PAGING_PAGESZ;
 	init_memphy(&mram, memramsz, rdmflag);
 
         /* Create all MEM SWAP */ 
