@@ -296,15 +296,6 @@ int pg_getpage(struct mm_struct *mm, int pgn, int *fpn, struct pcb_t *caller)
         temp3 = temp3->pg_next;
       }
       printf("\n");
-
-      struct pgn_t *pgn_it = caller->mm->fifo_pgn;
-      printf("Show fifo_pgn after swagging: ");
-      while (pgn_it != NULL)
-      {
-        printf("%d ", pgn_it->pgn);
-        pgn_it = pgn_it->pg_next;
-      }
-      printf("\n");
     }
   }
 
