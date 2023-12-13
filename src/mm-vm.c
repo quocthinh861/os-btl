@@ -93,7 +93,7 @@ int __alloc(struct pcb_t *caller, int vmaid, int rgid, int size, int *alloc_addr
   /* TODO get_free_vmrg_area FAILED handle the region management (Fig.6)*/
   else
   {
-printf("Process %d: Failed to allocate memory region\n", caller->pid);
+    printf("Process %d: Failed to allocate memory region\n", caller->pid);
     /* Attempt to increate limit to get space */
     struct vm_area_struct *cur_vma = get_vma_by_num(caller->mm, vmaid);
     int inc_sz = PAGING_PAGE_ALIGNSZ(size);
@@ -158,10 +158,10 @@ int pgalloc(struct pcb_t *proc, uint32_t size, uint32_t reg_index)
 {
   int addr;
   printf("Process %d: Allocating %d bytes\n", proc->pid, size);
-  
-    printf("------------------------ show page table process %d before allocating ------------------------\n", proc->pid);
-    print_pgtbl(proc, 0, -1);
-    printf("----------------------------------------------------------------------------------------------\n");
+
+  printf("------------------------ show page table process %d before allocating ------------------------\n", proc->pid);
+  print_pgtbl(proc, 0, -1);
+  printf("----------------------------------------------------------------------------------------------\n");
 
   /* By default using vmaid = 0 */
   int result = __alloc(proc, 0, reg_index, size, &addr);
@@ -169,7 +169,7 @@ int pgalloc(struct pcb_t *proc, uint32_t size, uint32_t reg_index)
   printf("------------------------ show page table process %d after allocating ------------------------\n", proc->pid);
   print_pgtbl(proc, 0, -1);
   printf("---------------------------------------------------------------------------------------------\n");
-  
+
   return result;
 }
 
@@ -197,7 +197,7 @@ int pg_getpage(struct mm_struct *mm, int pgn, int *fpn, struct pcb_t *caller)
 
   if (PAGING_PAGE_SWAPPED_PRESENT(pte))
   { /* Page is not online, make it actively living */
-  printf("Process %d: Page %d is swapped out\n", caller->pid, pgn);
+    printf("Process %d: Page %d is swapped out\n", caller->pid, pgn);
     int vicpgn, swpfpn;
     int vicfpn;
     uint32_t vicpte;
@@ -205,10 +205,10 @@ int pg_getpage(struct mm_struct *mm, int pgn, int *fpn, struct pcb_t *caller)
     int tgtfpn = GETVAL(pte, PAGING_PTE_SWPOFF_MASK, PAGING_SWPFPN_OFFSET);
 
     // Find free frame in RAM
-    if (MEMPHY_get_freefp(caller->mram, &swpfpn) == 0) {
-    
-    printf("Process %d: Page %d is swapped out\n", caller->pid, pgn);
-    
+    if (MEMPHY_get_freefp(caller->mram, &swpfpn) == 0)
+    {
+      printf(" Process %d: Swap out page %d to swap frame %d\n", caller->pid, pgn, swpfpn);
+
       __swap_cp_page(caller->active_mswp, tgtfpn, caller->mram, swpfpn);
 
       pte_set_fpn(&caller->mm->pgd[pgn], tgtfpn);
@@ -221,24 +221,29 @@ int pg_getpage(struct mm_struct *mm, int pgn, int *fpn, struct pcb_t *caller)
       newnode->fp_next = fp;
       caller->mram->used_fp_list = newnode;
     }
-    else {
-printf("Process %d: Page %d is swapped out\n", caller->pid, pgn);
+    else
+    {
+      printf("Cannot find free frame in RAM  -  pg_getpage\n");
+
       /* TODO: Play with your paging theory here */
       /* Find victim page */
-      if (find_victim_page_MRU(caller->mm, &vicpgn) != 0) {
+      if (find_victim_page_MRU(caller->mm, &vicpgn) != 0)
+      {
         printf("ERROR: Cannot find vitim page  -  pg_getpage()\n");
         return -1;
       }
 
       /* Get free frame in MEMSWP */
-      if (MEMPHY_get_freefp(caller->active_mswp, &swpfpn) != 0) {
+      if (MEMPHY_get_freefp(caller->active_mswp, &swpfpn) != 0)
+      {
         printf("ERROR: Cannot find free frame in RAM  -  pg_getpage\n");
         return -1;
       }
 
-      vicpte = caller->mm->pgd[vicpgn];  // victim pte from victim page number
+      printf("Process %d: Swap out page %d to swap frame %d\n", caller->pid, vicpgn, swpfpn);
+
+      vicpte = caller->mm->pgd[vicpgn]; // victim pte from victim page number
       vicfpn = GETVAL(vicpte, PAGING_PTE_FPN_MASK, 0);
-      
 
       /* Do swap frame from MEMRAM to MEMSWP and vice versa */
       /* Copy victim frame to swap */
@@ -252,104 +257,102 @@ printf("Process %d: Page %d is swapped out\n", caller->pid, pgn);
       /* Update its online status of the target page */
       pte_set_fpn(&caller->mm->pgd[pgn], vicfpn);
 
-printf("Show fifo_pgn before updating: ");
-    struct pgn_t *temp = caller->mm->fifo_pgn;
-    while (temp != NULL)
-    {
-      printf("%d ", temp->pgn);
-      temp = temp->pg_next;
-    }
-    printf("\n");
-  // remove pgn from fifo_pgn
-    struct pgn_t *temp2 = caller->mm->fifo_pgn;
-    struct pgn_t *prev = NULL;
-    while (temp2 != NULL)
-    {
-      if (temp2->pgn == pgn)
+      printf("Show fifo_pgn before updating: ");
+      struct pgn_t *temp = caller->mm->fifo_pgn;
+      while (temp != NULL)
       {
-        if (prev == NULL)
-        {
-          caller->mm->fifo_pgn = temp2->pg_next;
-        }
-        else
-        {
-          prev->pg_next = temp2->pg_next;
-        }
-        free(temp2);
-        break;
+        printf("%d ", temp->pgn);
+        temp = temp->pg_next;
       }
-      prev = temp2;
-      temp2 = temp2->pg_next;
-    }
+      printf("\n");
+      // remove pgn from fifo_pgn
+      struct pgn_t *temp2 = caller->mm->fifo_pgn;
+      struct pgn_t *prev = NULL;
+      while (temp2 != NULL)
+      {
+        if (temp2->pgn == pgn)
+        {
+          if (prev == NULL)
+          {
+            caller->mm->fifo_pgn = temp2->pg_next;
+          }
+          else
+          {
+            prev->pg_next = temp2->pg_next;
+          }
+          free(temp2);
+          break;
+        }
+        prev = temp2;
+        temp2 = temp2->pg_next;
+      }
       enlist_pgn_node(&caller->mm->fifo_pgn, pgn);
 
-          printf("Show fifo_pgn after updating: ");
-    struct pgn_t *temp3 = caller->mm->fifo_pgn;
-    while (temp3 != NULL)
-    {
-      printf("%d ", temp3->pgn);
-      temp3 = temp3->pg_next;
-    }
-    printf("\n");
+      printf("Show fifo_pgn after updating: ");
+      struct pgn_t *temp3 = caller->mm->fifo_pgn;
+      while (temp3 != NULL)
+      {
+        printf("%d ", temp3->pgn);
+        temp3 = temp3->pg_next;
+      }
+      printf("\n");
 
-    struct pgn_t *pgn_it = caller->mm->fifo_pgn;
-          printf("Show fifo_pgn after swagging: ");
-    while (pgn_it != NULL)
-    {
-      printf("%d ", pgn_it->pgn);
-      pgn_it = pgn_it->pg_next;
-    }
-    printf("\n");
-     
+      struct pgn_t *pgn_it = caller->mm->fifo_pgn;
+      printf("Show fifo_pgn after swagging: ");
+      while (pgn_it != NULL)
+      {
+        printf("%d ", pgn_it->pgn);
+        pgn_it = pgn_it->pg_next;
+      }
+      printf("\n");
     }
   }
 
   *fpn = GETVAL(mm->pgd[pgn], PAGING_PTE_FPN_MASK, 0);
-  
-printf("Process %d: Page %d is online with frame %d\n", caller->pid, pgn, *fpn);
 
-printf("Because this Page is currently used, so we need to update fifo_pgn\n");
+  printf("Process %d: Page %d is online with frame %d\n", caller->pid, pgn, *fpn);
+
+  printf("Because this Page is currently used, so we need to update fifo_pgn\n");
   printf("Show fifo_pgn before updating: ");
-    struct pgn_t *temp = caller->mm->fifo_pgn;
-    while (temp != NULL)
-    {
-      printf("%d ", temp->pgn);
-      temp = temp->pg_next;
-    }
-    printf("\n");
-
+  struct pgn_t *temp = caller->mm->fifo_pgn;
+  while (temp != NULL)
+  {
+    printf("%d ", temp->pgn);
+    temp = temp->pg_next;
+  }
+  printf("\n");
 
   // remove pgn from fifo_pgn
-    struct pgn_t *temp2 = caller->mm->fifo_pgn;
-    struct pgn_t *prev = NULL;
-    while (temp2 != NULL)
+  struct pgn_t *temp2 = caller->mm->fifo_pgn;
+  struct pgn_t *prev = NULL;
+  while (temp2 != NULL)
+  {
+    if (temp2->pgn == pgn)
     {
-      if (temp2->pgn == pgn)
+      if (prev == NULL)
       {
-        if (prev == NULL)
-        {
-          caller->mm->fifo_pgn = temp2->pg_next;
-        }
-        else
-        {
-          prev->pg_next = temp2->pg_next;
-        }
-        free(temp2);
-        break;
+        caller->mm->fifo_pgn = temp2->pg_next;
       }
-      prev = temp2;
-      temp2 = temp2->pg_next;
+      else
+      {
+        prev->pg_next = temp2->pg_next;
+      }
+      free(temp2);
+      break;
     }
-    enlist_pgn_node(&caller->mm->fifo_pgn, pgn);
+    prev = temp2;
+    temp2 = temp2->pg_next;
+  }
+  enlist_pgn_node(&caller->mm->fifo_pgn, pgn);
 
-    printf("Show fifo_pgn after updating: ");
-    struct pgn_t *temp3 = caller->mm->fifo_pgn;
-    while (temp3 != NULL)
-    {
-      printf("%d ", temp3->pgn);
-      temp3 = temp3->pg_next;
-    }
-    printf("\n");
+  printf("Show fifo_pgn after updating: ");
+  struct pgn_t *temp3 = caller->mm->fifo_pgn;
+  while (temp3 != NULL)
+  {
+    printf("%d ", temp3->pgn);
+    temp3 = temp3->pg_next;
+  }
+  printf("\n");
 
   return 0;
 }
@@ -371,9 +374,8 @@ int pg_getval(struct mm_struct *mm, int addr, BYTE *data, struct pcb_t *caller)
     return -1; /* invalid page access */
 
   int phyaddr = (fpn << PAGING_ADDR_FPN_LOBIT) + off;
-  
-  printf("phyaddr: %d\n", phyaddr);
 
+  printf("phyaddr: %d\n", phyaddr);
 
   MEMPHY_read(caller->mram, phyaddr, data);
 
@@ -397,7 +399,7 @@ int pg_setval(struct mm_struct *mm, int addr, BYTE value, struct pcb_t *caller)
     return -1; /* invalid page access */
 
   int phyaddr = (fpn << PAGING_ADDR_FPN_LOBIT) + off;
-  
+
   printf("phyaddr: %d\n", phyaddr);
 
   MEMPHY_write(caller->mram, phyaddr, value);
@@ -421,7 +423,7 @@ int __read(struct pcb_t *caller, int vmaid, int rgid, int offset, BYTE *data)
 
   if (currg == NULL || cur_vma == NULL) /* Invalid memory identify */
     return -1;
-printf("Reading to region %d [%d, %d]\n", rgid, currg->rg_start, currg->rg_end); // DEBUGGING
+  printf("Reading to region %d [%d, %d]\n", rgid, currg->rg_start, currg->rg_end); // DEBUGGING
   pg_getval(caller->mm, currg->rg_start + offset, data, caller);
 
   return 0;
@@ -435,7 +437,7 @@ int pgread(
     uint32_t destination)
 {
   BYTE data;
-  printf("Read proc %d\n",proc->pid); // DEBUGGING
+  printf("Read proc %d\n", proc->pid); // DEBUGGING
   int val = __read(proc, 0, source, offset, &data);
 
   destination = (uint32_t)data;
@@ -466,8 +468,8 @@ int __write(struct pcb_t *caller, int vmaid, int rgid, int offset, BYTE value)
 
   if (currg == NULL || cur_vma == NULL) /* Invalid memory identify */
     return -1;
-    
-   printf("Writing to region %d [%d, %d]\n", rgid, currg->rg_start, currg->rg_end); // DEBUGGING
+
+  printf("Writing to region %d [%d, %d]\n", rgid, currg->rg_start, currg->rg_end); // DEBUGGING
 
   pg_setval(caller->mm, currg->rg_start + offset, value, caller);
 
@@ -481,7 +483,7 @@ int pgwrite(
     uint32_t destination, // Index of destination register
     uint32_t offset)
 {
-  printf("Write proc %d\n",proc->pid); // DEBUGGING
+  printf("Write proc %d\n", proc->pid); // DEBUGGING
 #ifdef IODUMP
   printf("write region=%d offset=%d value=%d\n", destination, offset, data);
 #ifdef PAGETBL_DUMP
@@ -592,7 +594,9 @@ int inc_vma_limit(struct pcb_t *caller, int vmaid, int inc_sz)
    * now will be alloc real ram region */
   cur_vma->vm_end += inc_amt;
 
-  if (enlist_vm_rg_node(&caller->mm->mmap->vm_freerg_list, newrg) == 0) {}
+  if (enlist_vm_rg_node(&caller->mm->mmap->vm_freerg_list, newrg) == 0)
+  {
+  }
 
   if (vm_map_ram(caller, area->rg_start, area->rg_end,
                  old_end, incnumpage, newrg) < 0)
@@ -603,20 +607,20 @@ int inc_vma_limit(struct pcb_t *caller, int vmaid, int inc_sz)
 
 int find_victim_page_MRU(struct mm_struct *mm, int *retpgn)
 {
-    struct pgn_t *pg = mm->fifo_pgn;
+  struct pgn_t *pg = mm->fifo_pgn;
 
-    /* TODO: Implement the theoretical mechanism to find the victim page */
-    if (pg == NULL)
-    {
-        return -1;
-    }
+  /* TODO: Implement the theoretical mechanism to find the victim page */
+  if (pg == NULL)
+  {
+    return -1;
+  }
 
-    *retpgn = pg->pgn;
-    mm->fifo_pgn = pg->pg_next;
+  *retpgn = pg->pgn;
+  mm->fifo_pgn = pg->pg_next;
 
-    free(pg); // Free the memory of the removed pgn
+  free(pg); // Free the memory of the removed pgn
 
-    return 0;
+  return 0;
 }
 
 /*find_victim_page - find victim page
@@ -629,17 +633,20 @@ int find_victim_page(struct mm_struct *mm, int *retpgn)
   struct pgn_t *pg = mm->fifo_pgn;
 
   /* TODO: Implement the theorical mechanism to find the victim page */
-  if (pg == NULL) {
+  if (pg == NULL)
+  {
     return -1;
   }
 
-  if (pg->pg_next == NULL) {
+  if (pg->pg_next == NULL)
+  {
     *retpgn = pg->pgn;
     mm->fifo_pgn = NULL;
     return 0;
   }
 
-  while (pg->pg_next->pg_next != NULL) {
+  while (pg->pg_next->pg_next != NULL)
+  {
     pg = pg->pg_next;
   }
 
@@ -669,7 +676,7 @@ int get_free_vmrg_area(struct pcb_t *caller, int vmaid, int size, struct vm_rg_s
   if (rgit == NULL)
     return -1;
 
-//show free list of vm area with new region
+  // show free list of vm area with new region
   printf("Free list of vm area for process %d: ", caller->pid);
   struct vm_rg_struct *temp = rgit;
   while (temp != NULL)
@@ -689,7 +696,6 @@ int get_free_vmrg_area(struct pcb_t *caller, int vmaid, int size, struct vm_rg_s
     { /* Current region has enough space */
       newrg->rg_start = rgit->rg_start;
       newrg->rg_end = rgit->rg_start + size;
-     
 
       /* Update left space in chosen region */
       if (rgit->rg_start + size < rgit->rg_end)
@@ -723,18 +729,19 @@ int get_free_vmrg_area(struct pcb_t *caller, int vmaid, int size, struct vm_rg_s
     {
       rgit = rgit->rg_next; // Traverse next rg
     }
-    
   }
 
-if (newrg->rg_start == -1) // new region not found
+  if (newrg->rg_start == -1) // new region not found
   {
-        printf("new region not found\n");
-      return -1;
-  } else {
-  printf("new region found: [%d, %d]\n", newrg->rg_start, newrg->rg_end);
+    printf("new region not found\n");
+    return -1;
+  }
+  else
+  {
+    printf("new region found: [%d, %d]\n", newrg->rg_start, newrg->rg_end);
   }
 
-// show free list after alloc
+  // show free list after alloc
   printf("Free list of vm area for process %d after alloc: ", caller->pid);
   rgit = cur_vma->vm_freerg_list;
   while (rgit != NULL)
@@ -742,7 +749,7 @@ if (newrg->rg_start == -1) // new region not found
     printf("[%d, %d] ", rgit->rg_start, rgit->rg_end);
     rgit = rgit->rg_next;
   }
-  printf("\n");    
+  printf("\n");
 
   return 0;
 }
