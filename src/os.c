@@ -229,6 +229,7 @@ int main(int argc, char * argv[]) {
 	/* Create MEM RAM */
 	// show number of frames in RAM
 	int framenum = memramsz / PAGING_PAGESZ;
+	printf("Number of frames in RAM: %d\n", framenum);
 	init_memphy(&mram, memramsz, rdmflag);
 
         /* Create all MEM SWAP */ 
