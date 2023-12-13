@@ -161,14 +161,14 @@ int pgalloc(struct pcb_t *proc, uint32_t size, uint32_t reg_index)
   
     printf("------------------------ show page table process %d before allocating ------------------------\n", proc->pid);
     print_pgtbl(proc, 0, -1);
-    printf("\n------------------------------------------------------------\n");
+    printf("----------------------------------------------------------------------------------------------\n");
 
   /* By default using vmaid = 0 */
   int result = __alloc(proc, 0, reg_index, size, &addr);
 
   printf("------------------------ show page table process %d after allocating ------------------------\n", proc->pid);
   print_pgtbl(proc, 0, -1);
-  printf("\n------------------------------------------------------------\n");
+  printf("---------------------------------------------------------------------------------------------\n");
   
   return result;
 }
