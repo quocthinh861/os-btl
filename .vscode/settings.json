@@ -1,0 +1,11 @@
+{
+    "files.associations": {
+        "mm.h": "c",
+        "ostream": "c",
+        "istream": "c",
+        "__hash_table": "c",
+        "__split_buffer": "c",
+        "string": "c",
+        "vector": "c"
+    }
+}

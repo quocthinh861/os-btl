@@ -1,0 +1,8 @@
+1 7
+calc
+alloc 300 0
+calc
+read 0 20 1
+calc
+alloc 256 1
+free 0
