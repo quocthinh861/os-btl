@@ -266,26 +266,7 @@ int pg_getpage(struct mm_struct *mm, int pgn, int *fpn, struct pcb_t *caller)
       }
       printf("\n");
       // remove pgn from fifo_pgn
-      struct pgn_t *temp2 = caller->mm->fifo_pgn;
-      struct pgn_t *prev = NULL;
-      while (temp2 != NULL)
-      {
-        if (temp2->pgn == pgn)
-        {
-          if (prev == NULL)
-          {
-            caller->mm->fifo_pgn = temp2->pg_next;
-          }
-          else
-          {
-            prev->pg_next = temp2->pg_next;
-          }
-          free(temp2);
-          break;
-        }
-        prev = temp2;
-        temp2 = temp2->pg_next;
-      }
+      remove_pgn_node(&caller->mm->fifo_pgn, pgn);
       enlist_pgn_node(&caller->mm->fifo_pgn, pgn);
 
       printf("Show fifo_pgn after updating: ");
@@ -314,26 +295,7 @@ int pg_getpage(struct mm_struct *mm, int pgn, int *fpn, struct pcb_t *caller)
   printf("\n");
 
   // remove pgn from fifo_pgn
-  struct pgn_t *temp2 = caller->mm->fifo_pgn;
-  struct pgn_t *prev = NULL;
-  while (temp2 != NULL)
-  {
-    if (temp2->pgn == pgn)
-    {
-      if (prev == NULL)
-      {
-        caller->mm->fifo_pgn = temp2->pg_next;
-      }
-      else
-      {
-        prev->pg_next = temp2->pg_next;
-      }
-      free(temp2);
-      break;
-    }
-    prev = temp2;
-    temp2 = temp2->pg_next;
-  }
+  remove_pgn_node(&caller->mm->fifo_pgn, pgn);
   enlist_pgn_node(&caller->mm->fifo_pgn, pgn);
 
   printf("Show fifo_pgn after updating: ");
@@ -346,6 +308,25 @@ int pg_getpage(struct mm_struct *mm, int pgn, int *fpn, struct pcb_t *caller)
   printf("\n");
 
   return 0;
+}
+
+void remove_pgn_node(struct pgn_t **head, int pgn) {
+    struct pgn_t *temp = *head;
+    struct pgn_t *prev = NULL;
+
+    while (temp != NULL) {
+        if (temp->pgn == pgn) {
+            if (prev == NULL) {
+                *head = temp->pg_next;
+            } else {
+                prev->pg_next = temp->pg_next;
+            }
+            free(temp);
+            break;
+        }
+        prev = temp;
+        temp = temp->pg_next;
+    }
 }
 
 /*pg_getval - read value at given offset
