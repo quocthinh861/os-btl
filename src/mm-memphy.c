@@ -126,7 +126,6 @@ int MEMPHY_format(struct memphy_struct *mp, int pagesz)
     fst = malloc(sizeof(struct framephy_struct));
     fst->fpn = iter;
     mp->free_fp_list = fst;
-	printf("numfp = %d\n", numfp);
     /* We have list with first element, fill in the rest num-1 element member*/
     for (iter = 1; iter < numfp ; iter++)
     {
