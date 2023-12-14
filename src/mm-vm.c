@@ -257,20 +257,20 @@ int pg_getpage(struct mm_struct *mm, int pgn, int *fpn, struct pcb_t *caller)
       /* Update its online status of the target page */
       pte_set_fpn(&caller->mm->pgd[pgn], vicfpn);
 
-      printf("Show fifo_pgn before updating: ");
-      struct pgn_t *temp = caller->mm->fifo_pgn;
+      printf("Show mru_pgn before updating: ");
+      struct pgn_t *temp = caller->mm->mru_pgn;
       while (temp != NULL)
       {
         printf("%d ", temp->pgn);
         temp = temp->pg_next;
       }
       printf("\n");
-      // remove pgn from fifo_pgn
-      remove_pgn_node(&caller->mm->fifo_pgn, pgn);
-      enlist_pgn_node(&caller->mm->fifo_pgn, pgn);
+      // remove pgn from mru_pgn
+      remove_pgn_node(&caller->mm->mru_pgn, pgn);
+      enlist_pgn_node(&caller->mm->mru_pgn, pgn);
 
-      printf("Show fifo_pgn after updating: ");
-      struct pgn_t *temp3 = caller->mm->fifo_pgn;
+      printf("Show mru_pgn after updating: ");
+      struct pgn_t *temp3 = caller->mm->mru_pgn;
       while (temp3 != NULL)
       {
         printf("%d ", temp3->pgn);
@@ -284,9 +284,9 @@ int pg_getpage(struct mm_struct *mm, int pgn, int *fpn, struct pcb_t *caller)
 
   printf("Process %d: Page %d is online with frame %d\n", caller->pid, pgn, *fpn);
 
-  printf("Because this Page is currently used, so we need to update fifo_pgn\n");
-  printf("Show fifo_pgn before updating: ");
-  struct pgn_t *temp = caller->mm->fifo_pgn;
+  printf("Because this Page is currently used, so we need to update mru_pgn\n");
+  printf("Show mru_pgn before updating: ");
+  struct pgn_t *temp = caller->mm->mru_pgn;
   while (temp != NULL)
   {
     printf("%d ", temp->pgn);
@@ -294,12 +294,12 @@ int pg_getpage(struct mm_struct *mm, int pgn, int *fpn, struct pcb_t *caller)
   }
   printf("\n");
 
-  // remove pgn from fifo_pgn
-  remove_pgn_node(&caller->mm->fifo_pgn, pgn);
-  enlist_pgn_node(&caller->mm->fifo_pgn, pgn);
+  // remove pgn from mru_pgn
+  remove_pgn_node(&caller->mm->mru_pgn, pgn);
+  enlist_pgn_node(&caller->mm->mru_pgn, pgn);
 
-  printf("Show fifo_pgn after updating: ");
-  struct pgn_t *temp3 = caller->mm->fifo_pgn;
+  printf("Show mru_pgn after updating: ");
+  struct pgn_t *temp3 = caller->mm->mru_pgn;
   while (temp3 != NULL)
   {
     printf("%d ", temp3->pgn);
@@ -310,23 +310,29 @@ int pg_getpage(struct mm_struct *mm, int pgn, int *fpn, struct pcb_t *caller)
   return 0;
 }
 
-void remove_pgn_node(struct pgn_t **head, int pgn) {
-    struct pgn_t *temp = *head;
-    struct pgn_t *prev = NULL;
+void remove_pgn_node(struct pgn_t **head, int pgn)
+{
+  struct pgn_t *temp = *head;
+  struct pgn_t *prev = NULL;
 
-    while (temp != NULL) {
-        if (temp->pgn == pgn) {
-            if (prev == NULL) {
-                *head = temp->pg_next;
-            } else {
-                prev->pg_next = temp->pg_next;
-            }
-            free(temp);
-            break;
-        }
-        prev = temp;
-        temp = temp->pg_next;
+  while (temp != NULL)
+  {
+    if (temp->pgn == pgn)
+    {
+      if (prev == NULL)
+      {
+        *head = temp->pg_next;
+      }
+      else
+      {
+        prev->pg_next = temp->pg_next;
+      }
+      free(temp);
+      break;
     }
+    prev = temp;
+    temp = temp->pg_next;
+  }
 }
 
 /*pg_getval - read value at given offset
@@ -565,6 +571,7 @@ int inc_vma_limit(struct pcb_t *caller, int vmaid, int inc_sz)
   /* The obtained vm area (only)
    * now will be alloc real ram region */
   cur_vma->vm_end += inc_amt;
+  cur_vma->sbrk = cur_vma->vm_end;
 
   if (enlist_vm_rg_node(&caller->mm->mmap->vm_freerg_list, newrg) == 0)
   {
@@ -579,7 +586,7 @@ int inc_vma_limit(struct pcb_t *caller, int vmaid, int inc_sz)
 
 int find_victim_page_MRU(struct mm_struct *mm, int *retpgn)
 {
-  struct pgn_t *pg = mm->fifo_pgn;
+  struct pgn_t *pg = mm->mru_pgn;
 
   /* TODO: Implement the theoretical mechanism to find the victim page */
   if (pg == NULL)
@@ -588,7 +595,7 @@ int find_victim_page_MRU(struct mm_struct *mm, int *retpgn)
   }
 
   *retpgn = pg->pgn;
-  mm->fifo_pgn = pg->pg_next;
+  mm->mru_pgn = pg->pg_next;
 
   free(pg); // Free the memory of the removed pgn
 
@@ -602,7 +609,7 @@ int find_victim_page_MRU(struct mm_struct *mm, int *retpgn)
  */
 int find_victim_page(struct mm_struct *mm, int *retpgn)
 {
-  struct pgn_t *pg = mm->fifo_pgn;
+  struct pgn_t *pg = mm->mru_pgn;
 
   /* TODO: Implement the theorical mechanism to find the victim page */
   if (pg == NULL)
@@ -613,7 +620,7 @@ int find_victim_page(struct mm_struct *mm, int *retpgn)
   if (pg->pg_next == NULL)
   {
     *retpgn = pg->pgn;
-    mm->fifo_pgn = NULL;
+    mm->mru_pgn = NULL;
     return 0;
   }
 

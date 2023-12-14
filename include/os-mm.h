@@ -64,7 +64,7 @@ struct mm_struct {
    struct vm_rg_struct symrgtbl[PAGING_MAX_SYMTBL_SZ];
 
    /* list of free page */
-   struct pgn_t *fifo_pgn;
+   struct pgn_t *mru_pgn;
 };
 
 /*

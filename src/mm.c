@@ -97,11 +97,6 @@ int vmap_page_range(struct pcb_t *caller,           // process call
 
   ret_rg->rg_end = ret_rg->rg_start = addr; // at least the very first space is usable
 
-  /* TODO map range of frame to address space
-   *      [addr to addr + pgnum*PAGING_PAGESZ
-   *      in page table caller->mm->pgd[]
-   */
-
   for (pgit = 0; pgit < pgnum; pgit++)
   {
     // uint32_t *pte = &caller->mm->pgd[pgn + pgit];
@@ -115,17 +110,17 @@ int vmap_page_range(struct pcb_t *caller,           // process call
    * Enqueue new usage page */
   for (pgit = 0; pgit < pgnum; pgit++)
   {
-    enlist_pgn_node(&caller->mm->fifo_pgn, pgn + pgit);
+    enlist_pgn_node(&caller->mm->mru_pgn, pgn + pgit);
   }
-  
-    struct pgn_t *pgn_it = caller->mm->fifo_pgn;
-    printf("show fifo_pgn after allocating: ");
-    while (pgn_it != NULL)
-    {
-      printf("%d ", pgn_it->pgn);
-      pgn_it = pgn_it->pg_next;
-    }
-    printf("\n");
+
+  struct pgn_t *pgn_it = caller->mm->mru_pgn;
+  printf("show mru_pgn after allocating: ");
+  while (pgn_it != NULL)
+  {
+    printf("%d ", pgn_it->pgn);
+    pgn_it = pgn_it->pg_next;
+  }
+  printf("\n");
   return 0;
 }
 
@@ -145,7 +140,7 @@ int alloc_pages_range(struct pcb_t *caller, int req_pgnum, struct framephy_struc
   {
     if (MEMPHY_get_freefp(caller->mram, &fpn) == 0)
     {
-    printf("Success get free frame: %d\n", fpn);
+      printf("Success get free frame: %d\n", fpn);
       // enlist_framephy_node(frm_lst, fpn);
       newfp_str = (struct framephy_struct *)malloc(sizeof(struct framephy_struct));
       newfp_str->fpn = fpn;
@@ -169,21 +164,24 @@ int alloc_pages_range(struct pcb_t *caller, int req_pgnum, struct framephy_struc
       //   //newfp_str->owner = caller->active_mswp;
       //   *frm_lst = newfp_str;
       // }
-      if (find_victim_page_MRU(caller->mm, &victpgn) != 0) {
+      if (find_victim_page_MRU(caller->mm, &victpgn) != 0)
+      {
         printf("ERROR: Cannot find victim page in ram  -  alloc_pages_range\n");
         return -1;
       }
-      else {
-      printf("Success find victim page: %d\n", victpgn);
-      
+      else
+      {
+        printf("Success find victim page: %d\n", victpgn);
+
         victpte = caller->mm->pgd[victpgn];
         victfpn = GETVAL(victpte, PAGING_PTE_FPN_MASK, 0);
 
         int free_fpn;
-       if (MEMPHY_get_freefp(caller->active_mswp, &free_fpn) !=0) {
-        printf("ERROR: Cannot get free frame from physical memory  -  alloc_pages_range()\n");
-        return -1;
-       }
+        if (MEMPHY_get_freefp(caller->active_mswp, &free_fpn) != 0)
+        {
+          printf("ERROR: Cannot get free frame from physical memory  -  alloc_pages_range()\n");
+          return -1;
+        }
 
         // Swap victim frame to SWAP
         __swap_cp_page(caller->mram, victfpn, caller->active_mswp, free_fpn);
