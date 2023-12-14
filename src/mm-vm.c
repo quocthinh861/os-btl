@@ -93,7 +93,8 @@ int __alloc(struct pcb_t *caller, int vmaid, int rgid, int size, int *alloc_addr
   /* TODO get_free_vmrg_area FAILED handle the region management (Fig.6)*/
   else
   {
-    printf("Process %d: Failed to allocate memory region\n", caller->pid);
+    printf("Process %d, failed to allocate memory region with size %d\n", caller->pid, size);
+
     /* Attempt to increate limit to get space */
     struct vm_area_struct *cur_vma = get_vma_by_num(caller->mm, vmaid);
     int inc_sz = PAGING_PAGE_ALIGNSZ(size);
@@ -528,18 +529,17 @@ struct vm_rg_struct *get_vm_area_node_at_brk(struct pcb_t *caller, int vmaid, in
  */
 int validate_overlap_vm_area(struct pcb_t *caller, int vmaid, int vmastart, int vmaend)
 {
-  // struct vm_area_struct *vma = caller->mm->mmap;
+  struct vm_area_struct *vma = get_vma_by_num(caller->mm, vmaid);
 
   /* TODO validate the planned memory area is not overlapped */
-  // struct vm_area_struct *vma = caller->mm->mmap;
 
-  // // Check if the new area overlaps
-  // while (vma != NULL)
-  // {
-  //   if (vmastart < vma->vm_end && vmaend > vma->vm_start)
-  //     return -1;
-  //   vma = vma->vm_next;
-  // }
+  // Check if the new memory range overlaps with the current vm_area_struct
+  while (vma)
+  {
+    // if (OVERLAP(vma->vm_start, vmastart, vmaend, vma->vm_end) == 0)
+    //   return -1;
+    vma = vma->vm_next;
+  }
 
   return 0;
 }
@@ -562,7 +562,10 @@ int inc_vma_limit(struct pcb_t *caller, int vmaid, int inc_sz)
 
   /*Validate overlap of obtained region */
   if (validate_overlap_vm_area(caller, vmaid, area->rg_start, area->rg_end) < 0)
+  {
+    printf("inc_vma_limit(): validate_overlap_vm_area() failed\n");
     return -1; /*Overlap and failed allocation */
+  }
 
   /* The obtained vm area (only)
    * now will be alloc real ram region */
