@@ -87,6 +87,8 @@ int __alloc(struct pcb_t *caller, int vmaid, int rgid, int size, int *alloc_addr
     caller->mm->symrgtbl[rgid].rg_end = rgnode.rg_end;
 
     *alloc_addr = rgnode.rg_start;
+
+    printf("Process %d, allocated memory region with size %d from %d to %d\n", caller->pid, size, rgnode.rg_start, rgnode.rg_end);
     return 0;
   }
 
