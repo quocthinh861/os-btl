@@ -88,7 +88,7 @@ int __alloc(struct pcb_t *caller, int vmaid, int rgid, int size, int *alloc_addr
 
     *alloc_addr = rgnode.rg_start;
 
-    printf("Process %d, allocated memory region %d with size %d from %d to %d\n", rgid,caller->pid, size, rgnode.rg_start, rgnode.rg_end);
+    printf("Process %d, allocated memory region %d with size %d from %d to %d\n", rgid, caller->pid, size, rgnode.rg_start, rgnode.rg_end);
     return 0;
   }
 
@@ -358,6 +358,8 @@ int pg_getval(struct mm_struct *mm, int addr, BYTE *data, struct pcb_t *caller)
   printf("phyaddr: %d\n", phyaddr);
 
   MEMPHY_read(caller->mram, phyaddr, data);
+
+  printf("Read value %d from page %d\n", *data, pgn); // DEBUGGING
 
   return 0;
 }
