@@ -88,7 +88,7 @@ int __alloc(struct pcb_t *caller, int vmaid, int rgid, int size, int *alloc_addr
 
     *alloc_addr = rgnode.rg_start;
 
-    printf("Process %d, allocated memory region %d with size %d from %d to %d\n",rgid ,rgcaller->pid, size, rgnode.rg_start, rgnode.rg_end);
+    printf("Process %d, allocated memory region %d with size %d from %d to %d\n", rgid,caller->pid, size, rgnode.rg_start, rgnode.rg_end);
     return 0;
   }
 
