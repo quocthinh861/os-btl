@@ -105,7 +105,7 @@ int __alloc(struct pcb_t *caller, int vmaid, int rgid, int size, int *alloc_addr
     /* TODO INCREASE THE LIMIT
      * inc_vma_limit(caller, vmaid, inc_sz)
      */
-    if(inc_vma_limit(caller, vmaid, inc_sz) < 0)
+    if (inc_vma_limit(caller, vmaid, inc_sz) < 0)
       return -1;
 
     if (get_free_vmrg_area(caller, vmaid, size, &rgnode) == 0)
@@ -445,7 +445,7 @@ int __write(struct pcb_t *caller, int vmaid, int rgid, int offset, BYTE value)
   if (currg == NULL || cur_vma == NULL) /* Invalid memory identify */
     return -1;
 
-  printf("Writing to region %d [%d, %d]\n", rgid, currg->rg_start, currg->rg_end); // DEBUGGING
+  printf("Writing to region %d [%d, %d] with value %d\n", rgid, currg->rg_start, currg->rg_end, value); // DEBUGGING
 
   pg_setval(caller->mm, currg->rg_start + offset, value, caller);
 
@@ -572,7 +572,6 @@ int inc_vma_limit(struct pcb_t *caller, int vmaid, int inc_sz)
    * now will be alloc real ram region */
   cur_vma->vm_end += inc_amt;
   cur_vma->sbrk = cur_vma->vm_end;
-
 
   if (vm_map_ram(caller, area->rg_start, area->rg_end,
                  old_end, incnumpage, newrg) < 0)
