@@ -95,7 +95,7 @@ int __alloc(struct pcb_t *caller, int vmaid, int rgid, int size, int *alloc_addr
   /* TODO get_free_vmrg_area FAILED handle the region management (Fig.6)*/
   else
   {
-    printf("Process %d, failed to allocate memory region with size %d\n", caller->pid, size);
+    printf("Process %d, failed to allocate memory region %d with size %d\n", rgid, caller->pid, size);
 
     /* Attempt to increate limit to get space */
     struct vm_area_struct *cur_vma = get_vma_by_num(caller->mm, vmaid);
