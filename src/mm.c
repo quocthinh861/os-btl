@@ -137,11 +137,11 @@ int alloc_pages_range(struct pcb_t *caller, int req_pgnum, struct framephy_struc
   struct framephy_struct *newfp_str;
 
   // Not enough RAM to alloc the required page num
-  if ((req_pgnum * PAGING_PAGESZ) > caller->mram->maxsz)
-  {
-    printf("ERROR: Not enough RAM to alloc the required page num  -  alloc_pages_range()\n");
-    return -3000;
-  }
+  // if ((req_pgnum * PAGING_PAGESZ) > caller->mram->maxsz)
+  // {
+  //   printf("ERROR: Not enough RAM to alloc the required page num  -  alloc_pages_range()\n");
+  //   return -3000;
+  // }
 
   for (pgit = 0; pgit < req_pgnum; pgit++)
   {
