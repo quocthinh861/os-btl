@@ -118,7 +118,7 @@ int __alloc(struct pcb_t *caller, int vmaid, int rgid, int size, int *alloc_addr
 
       *alloc_addr = old_sbrk;
 
-      printf("Process %d, allocated memory region with size %d from %d to %d\n", caller->pid, size, old_sbrk, old_sbrk + size);
+      printf("Process %d, allocated memory region %d with size %d from %d to %d\n", rgid, caller->pid, size, old_sbrk, old_sbrk + size);
       return 0;
     }
   }
