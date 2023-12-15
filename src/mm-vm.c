@@ -367,6 +367,7 @@ int pg_getval(struct mm_struct *mm, int addr, BYTE *data, struct pcb_t *caller)
 int pg_setval(struct mm_struct *mm, int addr, BYTE value, struct pcb_t *caller)
 {
   int pgn = PAGING_PGN(addr);
+  printf("Set value to page %d\n", pgn); // DEBUGGING
   int off = PAGING_OFFST(addr);
   int fpn;
 
